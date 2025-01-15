@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     loginError.value = null;
 
     try {
-      const response = await fetch('http://utilities.local:8000/api/method/utilities_app.api.login',
+      const response = await fetch('http://frappe-nuxt.local:8000/api/method/frappe_nuxt_app.api.login',
         {
           method: 'POST',
           headers: {
@@ -31,8 +31,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       const data = await response.json();
 
-      console.log("response del login", data);
+      // console.log("response del login", data);
 
+      // verficia el success_key para determinar si fue exitora la autenticacion
       if (data.success_key === 1) {
         user.value = data.message;   // guarda los datos del usuario
 
@@ -41,12 +42,14 @@ export const useAuthStore = defineStore('auth', () => {
           localStorage.setItem('apiKey', user.value.api_key);
           localStorage.setItem('apiSecret', user.value.api_secret)
         }
+        return { success_key: 1, message: 'Autenticacion exitosa' }
       } else {
         loginError.value = data.message
+        return { success_key: 0, message: loginError.value };  // retornando el error
       }
     } catch (error) {
-      loginError.value = 'Error en la solicitur, intente de nuevo';
-      console.error("Error en la solicitud", error);
+      loginError.value = 'Error en la solicitud, intente de nuevo';
+      return { success_key: 0, message: loginError.value };  // retornando el error
     } finally {
       loading.value = false;
     }

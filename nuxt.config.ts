@@ -1,3 +1,5 @@
+import { Notify } from "quasar";
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
@@ -10,4 +12,9 @@ export default defineNuxtConfig({
     '@nuxt/image',
     'nuxt-quasar-ui',
   ],
+  quasar: {
+    plugins: [
+      'Notify',
+    ]
+  }
 })
