@@ -2,16 +2,29 @@
   <div class="min-h-screen">
     <!-- Top Navigation Bar -->
     <header class="bg-gray-500 shadow">
-      <div class="mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex h-16 items-center justify-between">
-          <div class="text-2xl font-semibold">ERP-NUXT-Utilities</div>
+      <div class="px-4 mx-auto sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="text-2xl font-semibold">
+            <NuxtLink to="/main"> ERP-NUXT-Utilities </NuxtLink>
+          </div>
+          <!-- <button
+            @click="changeColor"
+            class="p-2 transition-colors mdi-square-rounded-badge hover:bg-gray-400 dark:hover:bg-gray-600"
+          >
+            {{ $colorMode.value === "dark" ? "☀️" : "🌙" }}
+          </button> -->
+          <q-btn label="Modo" @click="changeColor">
+            <div class="p-2 m-1">
+              {{ $colorMode.value === "dark" ? "☀️" : "🌙" }}
+            </div>
+          </q-btn>
         </div>
       </div>
     </header>
 
     <div class="flex h-[calc(100vh-64px)]">
       <!-- Sidebar -->
-      <aside class="w-64 border-r bg-gray-200 dark:bg-gray-800">
+      <aside class="w-64 bg-gray-200 border-r dark:bg-gray-800">
         <nav class="flex flex-col h-full">
           <div class="px-4 grow">
             <div class="grid gap-2 mt-4">
@@ -44,11 +57,11 @@
               </NuxtLink>
             </div>
           </div>
-          <div class="p-4 border-r">
+          <!-- <div class="p-4 border-r">
             <button @click="changeColor">
               {{ $colorMode.value === "dark" ? "☀️" : "🌙" }} Modo
             </button>
-          </div>
+          </div> -->
         </nav>
       </aside>
 

@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     loginError.value = null;
 
     try {
-      const response = await fetch('http://frappe-nuxt.local:8000/api/method/frappe_nuxt_app.api.login',
+      const response = await fetch('http://frappe-nuxt.local:8000/api/method/frappe_nuxt_app.api.auth.login',
         {
           method: 'POST',
           headers: {
@@ -31,11 +31,12 @@ export const useAuthStore = defineStore('auth', () => {
 
       const data = await response.json();
 
-      // console.log("response del login", data);
+      console.log("Datos OBTENIDOS del login DATA: ", data);
 
       // verficia el success_key para determinar si fue exitora la autenticacion
       if (data.success_key === 1) {
         user.value = data.message;   // guarda los datos del usuario
+        console.log("SUCCESS_KEY 1 LOGIN: ", user.value);
 
         // verificando que user.value no sea null antes de acceder a sus propiedades
         if (user.value) {
@@ -55,11 +56,42 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  // Accion para cerrar sesion
   const logout = () => {
     user.value = null;
     localStorage.removeItem('apiKey');
     localStorage.removeItem('apiSecret');
   };
 
-  return { user, loginError, loading, login, logout }
+  // Accion para verificar la autenticacion con el backend
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('http://frappe-nuxt.local:8000/api/method/frappe.auth.get_logged_user', {
+        method: 'GET',
+        headers: {
+          Authorization: `token ${user.value?.api_secret}`,
+        },
+      });
+
+      const data = await response.json();
+
+      console.log('Datos del CHECKAUTH: ', data);
+
+      if (data.message && data.message !== "Guest") {
+        // verificando si coincide el usuario autenticado en el frontend con el backend
+        const storedUsername = localStorage.getItem('username');
+        if (data.message.username === storedUsername) {
+
+          return true;  // Usuario autenticado en el backend
+        }
+      } else {
+        logout(); // Cierra sesion si el backend no esta autenticado
+      }
+    } catch (error) {
+      logout(); // cierra sesion si hay error 
+      return false;
+    }
+  }
+
+  return { user, loginError, loading, login, logout, checkAuth }
 })
