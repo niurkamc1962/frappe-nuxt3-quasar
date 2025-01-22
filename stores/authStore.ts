@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useApiUrlStore } from './apiUrlStore';
 
 interface User {
   api_key: string;
@@ -9,6 +10,10 @@ interface User {
 }
 
 export const useAuthStore = defineStore('auth', () => {
+  // Usar el store de la URL de la API
+  const apiUrlStore = useApiUrlStore();
+
+
   // Estado Inicial
   const user = ref<User | null>(null)
   const loginError = ref<string | null>(null)
@@ -20,7 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
     loginError.value = null;
 
     try {
-      const response = await fetch('http://frappe-nuxt.local:8000/api/method/frappe_nuxt_app.api.auth.login',
+      const response = await fetch(`${apiUrlStore.apiUrl}/api/method/${apiUrlStore.appName}.api.auth.login`,
         {
           method: 'POST',
           headers: {
@@ -31,14 +36,15 @@ export const useAuthStore = defineStore('auth', () => {
 
       const data = await response.json();
 
-      console.log("Datos OBTENIDOS del login DATA: ", data);
+      // console.log('DATA: ', data);
 
-      // verficia el success_key para determinar si fue exitora la autenticacion
+
+      // verfiica el success_key para determinar si fue exitora la autenticacion
       if (data.success_key === 1) {
         user.value = data.message;   // guarda los datos del usuario
-        console.log("SUCCESS_KEY 1 LOGIN: ", user.value);
-
         // verificando que user.value no sea null antes de acceder a sus propiedades
+        console.log('Usuario autenticado: ', user.value);
+
         if (user.value) {
           localStorage.setItem('apiKey', user.value.api_key);
           localStorage.setItem('apiSecret', user.value.api_secret)
@@ -63,35 +69,10 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('apiSecret');
   };
 
-  // Accion para verificar la autenticacion con el backend
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('http://frappe-nuxt.local:8000/api/method/frappe.auth.get_logged_user', {
-        method: 'GET',
-        headers: {
-          Authorization: `token ${user.value?.api_secret}`,
-        },
-      });
-
-      const data = await response.json();
-
-      console.log('Datos del CHECKAUTH: ', data);
-
-      if (data.message && data.message !== "Guest") {
-        // verificando si coincide el usuario autenticado en el frontend con el backend
-        const storedUsername = localStorage.getItem('username');
-        if (data.message.username === storedUsername) {
-
-          return true;  // Usuario autenticado en el backend
-        }
-      } else {
-        logout(); // Cierra sesion si el backend no esta autenticado
-      }
-    } catch (error) {
-      logout(); // cierra sesion si hay error 
-      return false;
+  return { user, loginError, loading, login, logout };
+},
+  {
+    persist: {
+      storage: piniaPluginPersistedstate.localStorage(), // usando sessionStorage en lugar de localStorage
     }
-  }
-
-  return { user, loginError, loading, login, logout, checkAuth }
-})
+  });

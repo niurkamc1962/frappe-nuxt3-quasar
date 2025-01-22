@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@nuxt/image',
     'nuxt-quasar-ui',
+    'pinia-plugin-persistedstate/nuxt'
   ],
   quasar: {
     plugins: [

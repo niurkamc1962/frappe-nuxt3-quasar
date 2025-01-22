@@ -256,7 +256,7 @@ async function handleFileUpload(file: File | null): Promise<void> {
       type: "positive",
       message: "Archivo subido correctamente",
     });
-    console.log("Respuesta del servidor: ", response.data);
+    console.log("Respuesta del servidor: ", response);
   } catch (error) {
     // Notificacion de error
     $q.notify({

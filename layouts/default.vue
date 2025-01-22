@@ -75,6 +75,11 @@
 
 <script setup lang="ts">
 const route = useRoute();
+import { useAuthStore } from "~/stores/authStore";
+
+// Forzando la hidratacion del esto de pinia desde localStorage
+const authStore = useAuthStore();
+authStore.$hydrate(); // asegurando que se cargue el estado del localStorage
 
 const colorMode = useColorMode();
 const changeColor = () => {
