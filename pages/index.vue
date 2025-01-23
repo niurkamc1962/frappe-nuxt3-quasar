@@ -150,7 +150,7 @@ const handleSetApiUrl = async () => {
   }
 
   apiUrlStore.setApiUrl(inputApiUrl.value); // Guarda la URL en el store
-  apiUrlStore.setAppName(inputAppName.value); // Guarad el nombre de la app en el store
+  apiUrlStore.setAppName(inputAppName.value); // Guarda el nombre de la app en el store
   errorMessage.value = null;
 };
 
@@ -175,6 +175,9 @@ const handleLogin = async () => {
       icon: "cloud_done",
       message: "ERROR, Usuario o password erroneo",
     });
+    // limpiando los campos del formulario
+    username.value = "";
+    password.value = "";
   }
 };
 </script>

@@ -10,7 +10,7 @@
           accept=".pdf"
           filled
           max-file-size="40000000"
-          url="http://frappe-nuxt.local:8000/api/method/frappe_nuxt_app.api.pdf.upload_pdf"
+          :url="uploadUrl"
           :headers="headers"
           @uploaded="onUploaded"
           @failed="onFailed"
@@ -94,26 +94,55 @@ import { ref, computed } from "vue";
 import { useQuasar } from "quasar";
 import { useColorMode } from "#imports";
 import { useAuthStore } from "~/stores/authStore";
+import { useApiUrlStore } from "~/stores/apiUrlStore";
+
+// Usar el store de la URL de la API
+const apiUrlStore = useApiUrlStore();
+
+// URL dinámica para la subida de archivos
+const uploadUrl = computed(() => {
+  return `${apiUrlStore.apiUrl}/api/method/${apiUrlStore.appName}.api.pdf.upload_pdf`;
+});
 
 const $q = useQuasar();
 const colorMode = useColorMode();
 const authStore = useAuthStore();
 
-// Obteniendo el apiKey del store
-const apiKey = authStore.user?.api_key;
+// // Obteniendo el apiKey del store
+// const apiKey = authStore.user?.api_key;
 
 // Computada para el color de la label en q-file
 const labelColor = computed(() => {
   return colorMode.value === "dark" ? "white" : "gray-9";
 });
 
+// obteniendo los datos del usuario autenticado
+const authString = localStorage.getItem("auth");
+if (authString) {
+  const authObject = JSON.parse(authString);
+  const username = authObject.loginError.username;
+  const apiKey = authObject.loginError.api_key;
+  const apiSecret = authObject.loginError.api_secret;
+  // preparando el token para la autenticacion para que frappe no rechaze la peticion
+  // al subir el archivo pdf
+  const token = `${apiKey}:${apiSecret}`;
+
+  console.log("TOKEN: ", token);
+
+  console.log("Username:", username);
+  console.log("apiKey:", apiKey);
+  console.log("apiSecret:", apiSecret);
+} else {
+  console.log("No se encontró el valor de auth en localStorage.");
+}
+
 // Headers para la autenticación (si es necesaria)
-const headers = [
-  {
-    name: "Authorization",
-    value: `token ${apiKey}`, // Ejemplo de token de autenticación
-  },
-];
+// const headers = [
+//   {
+//     name: "Authorization",
+//     value: `token ${apiKey}`, // Ejemplo de token de autenticación
+//   },
+// ];
 
 interface PdfFile {
   name: string;
@@ -230,7 +259,7 @@ async function handleFileUpload(file: File | null): Promise<void> {
   try {
     // enviar el archivo pdf a la api de Frappe
     const response = await fetch(
-      "http://frappe-nuxt.local:8000/api/method/frappe_nuxt_app.api.upload_pdf",
+      `${apiUrlStore.apiUrl}/api/method/${apiUrlStore.appName}.api.pdf.upload_pdf`,
       {
         method: "POST",
         body: formData,

@@ -7,17 +7,32 @@
           <div class="text-2xl font-semibold">
             <NuxtLink to="/main"> ERP-NUXT-Utilities </NuxtLink>
           </div>
-          <!-- <button
-            @click="changeColor"
-            class="p-2 transition-colors mdi-square-rounded-badge hover:bg-gray-400 dark:hover:bg-gray-600"
-          >
-            {{ $colorMode.value === "dark" ? "☀️" : "🌙" }}
-          </button> -->
-          <q-btn label="Modo" @click="changeColor">
-            <div class="p-2 m-1">
-              {{ $colorMode.value === "dark" ? "☀️" : "🌙" }}
+          <div class="flex items-center gap-4">
+            <div v-if="authStore.user">
+              {{ authStore.user.username }}
             </div>
-          </q-btn>
+            <q-btn dense flat @click="changeColor">
+              <div class="p-2 m-1">
+                {{ $colorMode.value === "dark" ? "☀️" : "🌙" }}
+              </div>
+            </q-btn>
+            <q-btn-dropdown dense flat label="Menu">
+              <q-list>
+                <q-item
+                  v-for="(item, index) in flatUserMenuItems"
+                  :key="index"
+                  clickable
+                  @click="goTo(item.path)"
+                >
+                  <q-item-section>
+                    <q-item-label>
+                      {{ item.title }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+          </div>
         </div>
       </div>
     </header>
@@ -75,6 +90,7 @@
 
 <script setup lang="ts">
 const route = useRoute();
+const router = useRouter(); // importando el router para la navegacion
 import { useAuthStore } from "~/stores/authStore";
 
 // Forzando la hidratacion del esto de pinia desde localStorage
@@ -82,6 +98,7 @@ const authStore = useAuthStore();
 authStore.$hydrate(); // asegurando que se cargue el estado del localStorage
 
 const colorMode = useColorMode();
+
 const changeColor = () => {
   if (colorMode.value === "light") {
     colorMode.preference = "dark";
@@ -135,13 +152,6 @@ const userMenuItems: UserMenuItem[][] = [
       path: "/admin",
     },
     {
-      title: "Perfil",
-      icon: "i-heroicons-user",
-      path: "/perfil",
-    },
-  ],
-  [
-    {
       title: "Cerrar Sesión",
       icon: "i-heroicons-arrow-left-on-rectangle",
       path: "/",
@@ -154,9 +164,11 @@ const flatUserMenuItems = userMenuItems.flat();
 
 // Función para navegar a la ruta correspondiente
 const goTo = (path: string) => {
-  // Aquí puedes usar router.push o cualquier método de navegación que estés usando
-  console.log(`Navegando a: ${path}`);
-  // Ejemplo: router.push(path);
+  if (path === "/") {
+    // limpiando los datos de autenticacion
+    authStore.clearAuthData();
+  }
+  router.push(path);
 };
 </script>
 

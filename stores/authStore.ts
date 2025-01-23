@@ -13,7 +13,6 @@ export const useAuthStore = defineStore('auth', () => {
   // Usar el store de la URL de la API
   const apiUrlStore = useApiUrlStore();
 
-
   // Estado Inicial
   const user = ref<User | null>(null)
   const loginError = ref<string | null>(null)
@@ -39,16 +38,16 @@ export const useAuthStore = defineStore('auth', () => {
       // console.log('DATA: ', data);
 
 
-      // verfiica el success_key para determinar si fue exitora la autenticacion
+      // verifica el success_key para determinar si fue exitora la autenticacion
       if (data.success_key === 1) {
         user.value = data.message;   // guarda los datos del usuario
         // verificando que user.value no sea null antes de acceder a sus propiedades
         console.log('Usuario autenticado: ', user.value);
 
-        if (user.value) {
-          localStorage.setItem('apiKey', user.value.api_key);
-          localStorage.setItem('apiSecret', user.value.api_secret)
-        }
+        // if (user.value) {
+        //   localStorage.setItem('apiKey', user.value.api_key);
+        //   localStorage.setItem('apiSecret', user.value.api_secret)
+        // }
         return { success_key: 1, message: 'Autenticacion exitosa' }
       } else {
         loginError.value = data.message
@@ -62,14 +61,37 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  // Accion para guardar los datos de autenticacion
+  const setAuthData = (authData: User) => {
+    user.value = authData  // gurada los datos en el store
+    if (import.meta.client) {
+      localStorage.setItem('auth', JSON.stringify(authData)) // guarda los datos en el localStorage
+    }
+  }
+
+  // Accion para limpiar los datos de autenticacion
+  const clearAuthData = () => {
+    user.value = null
+    if (import.meta.client) {
+      localStorage.removeItem('auth')
+    }
+  }
+
+  // Verificar si el usuario esta autenticado
+  const isAuthenticated = () => {
+    return !!user.value  // devuelve true si el usuario esta autenticado
+  }
+
   // Accion para cerrar sesion
   const logout = () => {
     user.value = null;
-    localStorage.removeItem('apiKey');
-    localStorage.removeItem('apiSecret');
+    if (import.meta.client) {
+      localStorage.removeItem('apiKey');
+      localStorage.removeItem('apiSecret');
+    }
   };
 
-  return { user, loginError, loading, login, logout };
+  return { user, loginError, loading, login, logout, setAuthData, clearAuthData, isAuthenticated };
 },
   {
     persist: {
