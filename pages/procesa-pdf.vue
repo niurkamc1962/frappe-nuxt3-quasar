@@ -10,10 +10,6 @@
           accept=".pdf"
           filled
           max-file-size="40000000"
-          :url="uploadUrl"
-          :headers="headers"
-          @uploaded="onUploaded"
-          @failed="onFailed"
           @rejected="onRejected"
           :label-color="labelColor"
           :class="{
@@ -23,6 +19,7 @@
               $colorMode.value === 'light',
           }"
           class="mb-4"
+          @added="handleFileUpload"
         >
           <template v-slot:prepend>
             <q-icon name="attach_file" />
@@ -30,7 +27,7 @@
         </q-uploader>
       </div>
 
-      <!-- <q-table
+      <q-table
         :rows="pdfFiles"
         :columns="columns"
         row-key="name"
@@ -64,7 +61,7 @@
             </q-btn>
           </q-td>
         </template>
-      </q-table> -->
+      </q-table>
 
       <q-dialog v-model="previewDialog" full-width>
         <q-card>
@@ -77,7 +74,7 @@
           <q-card-section>
             <iframe
               v-if="selectedFile"
-              :src="selectedFile.url"
+              :src="selectedFile.ruta_archivo"
               width="100%"
               height="600"
               frameborder="0"
@@ -108,33 +105,31 @@ const $q = useQuasar();
 const colorMode = useColorMode();
 const authStore = useAuthStore();
 
-// // Obteniendo el apiKey del store
-// const apiKey = authStore.user?.api_key;
-
 // Computada para el color de la label en q-file
 const labelColor = computed(() => {
   return colorMode.value === "dark" ? "white" : "gray-9";
 });
 
 // obteniendo los datos del usuario autenticado
-const authString = localStorage.getItem("auth");
-if (authString) {
-  const authObject = JSON.parse(authString);
-  const username = authObject.loginError.username;
-  const apiKey = authObject.loginError.api_key;
-  const apiSecret = authObject.loginError.api_secret;
-  // preparando el token para la autenticacion para que frappe no rechaze la peticion
-  // al subir el archivo pdf
-  const token = `${apiKey}:${apiSecret}`;
+// const authString = localStorage.getItem("auth");
 
-  console.log("TOKEN: ", token);
+// if (authString) {
+//   const authObject = JSON.parse(authString);
+//   const username = authObject.loginError.username;
+//   const apiKey = authObject.loginError.api_key;
+//   const apiSecret = authObject.loginError.api_secret;
+//   // preparando el token para la autenticacion para que frappe no rechaze la peticion
+//   // al subir el archivo pdf
+//   const token = `${apiKey}:${apiSecret}`;
 
-  console.log("Username:", username);
-  console.log("apiKey:", apiKey);
-  console.log("apiSecret:", apiSecret);
-} else {
-  console.log("No se encontró el valor de auth en localStorage.");
-}
+//   // console.log("TOKEN: ", token);
+
+//   // console.log("Username:", username);
+//   // console.log("apiKey:", apiKey);
+//   // console.log("apiSecret:", apiSecret);
+// } else {
+//   console.log("No se encontró el valor de auth en localStorage.");
+// }
 
 // Headers para la autenticación (si es necesaria)
 // const headers = [
@@ -147,8 +142,9 @@ if (authString) {
 interface PdfFile {
   name: string;
   size: number;
-  uploadDate: string;
-  url: string;
+  archivo_pdf: string;
+  ruta_archivo: string;
+  estado_archivo: string;
 }
 
 interface TableColumn {
@@ -167,41 +163,63 @@ const selected = ref<PdfFile[]>([]);
 const previewDialog = ref<boolean>(false);
 const selectedFile = ref<PdfFile | null>(null);
 
+// Columnas de la tabla
 const columns: TableColumn[] = [
   {
     name: "name",
     required: true,
-    label: "Nombre del archivo",
+    label: "Nombre del registro",
     align: "left",
     field: (row: PdfFile) => row.name,
     sortable: true,
   },
   {
-    name: "size",
-    label: "Tamaño",
-    field: "size",
+    name: "archivo_pdf",
+    label: "Nombre del archivo",
+    align: "left",
+    field: (row: PdfFile) => row.archivo_pdf,
     sortable: true,
-    format: (val: number) => formatFileSize(val),
   },
   {
-    name: "uploadDate",
-    label: "Fecha de subida",
-    field: "uploadDate",
+    name: "ruta_archivo",
+    label: "Ruta del archivo",
+    align: "left",
+    field: (row: PdfFile) => row.ruta_archivo,
+    sortable: true,
+  },
+  {
+    name: "estado_archivo",
+    label: "Estado del archivo",
+    align: "left",
+    field: (row: PdfFile) => row.estado_archivo,
     sortable: true,
   },
   {
     name: "actions",
     label: "Acciones",
+    align: "center",
     field: "actions",
   },
 ];
 
+// Función para obtener el token de autenticación
+function getAuthToken() {
+  const authString = localStorage.getItem("auth");
+  if (!authString)
+    throw new Error("No se encontró el valor de auth en localStorage.");
+
+  const authObject = JSON.parse(authString);
+  const apiKey = authObject.loginError.api_key;
+  const apiSecret = authObject.loginError.api_secret;
+  return `${apiKey}:${apiSecret}`;
+}
+
 // Función para manejar archivos rechazados
 function onRejected(rejectedEntries: any[]) {
   rejectedEntries.forEach((entry) => {
-    console.log("Archivo rechazado: ", entry.file.name);
-    console.log("Motivo Rechazo: ", entry.failedPropValidation);
-    console.log("Size KB: ", (entry.file.size / 1024).toFixed(2));
+    // console.log("Archivo rechazado: ", entry.file.name);
+    // console.log("Motivo Rechazo: ", entry.failedPropValidation);
+    // console.log("Size KB: ", (entry.file.size / 1024).toFixed(2));
 
     if (entry.failedPropValidation === "max-file-size") {
       $q.notify({
@@ -213,55 +231,32 @@ function onRejected(rejectedEntries: any[]) {
 }
 
 // Función para manejar la subida exitosa
-function onUploaded(info: { files: File[]; xhr: XMLHttpRequest }) {
-  const response = JSON.parse(info.xhr.response);
-  if (response.message) {
-    $q.notify({
-      type: "positive",
-      message: response.message,
-    });
-
-    // Agregar el archivo subido a la lista
-    const newFile: PdfFile = {
-      name: info.files[0].name,
-      size: info.files[0].size,
-      uploadDate: new Date().toLocaleDateString(),
-      url: URL.createObjectURL(info.files[0]),
-    };
-    pdfFiles.value.push(newFile);
-  }
-}
-
-// Función para manejar errores de subida
-function onFailed(info: { files: File[]; xhr: XMLHttpRequest }) {
-  $q.notify({
-    type: "negative",
-    message: "Error al subir el archivo",
-  });
-  console.error("Error en la subida:", info.xhr.response);
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
-async function handleFileUpload(file: File | null): Promise<void> {
+async function handleFileUpload(files: File[]) {
+  const file = files[0];
   if (!file) return;
 
-  // Creando un objeto FormData para enviar el archivo
   const formData = new FormData();
-  formData.append("file", file); // file es el nombre del campo que se espera en el backend
+  formData.append("file", file);
 
   try {
-    // enviar el archivo pdf a la api de Frappe
+    // const authString = localStorage.getItem("auth");
+    // if (!authString)
+    //   throw new Error("No se encontró el valor de auth en localStorage.");
+
+    // const authObject = JSON.parse(authString);
+    // const apiKey = authObject.loginError.api_key;
+    // const apiSecret = authObject.loginError.api_secret;
+    // const token = `${apiKey}:${apiSecret}`;
+
+    const token = getAuthToken();
+
     const response = await fetch(
-      `${apiUrlStore.apiUrl}/api/method/${apiUrlStore.appName}.api.pdf.upload_pdf`,
+      `${apiUrlStore.apiUrl}/api/method/upload_file`,
       {
         method: "POST",
+        headers: {
+          Authorization: `token ${token}`,
+        },
         body: formData,
       }
     );
@@ -270,24 +265,41 @@ async function handleFileUpload(file: File | null): Promise<void> {
       throw new Error("Error al subir el archivo");
     }
 
-    const newFile: PdfFile = {
-      name: file.name,
-      size: file.size,
-      uploadDate: new Date().toLocaleDateString(),
-      url: URL.createObjectURL(file),
-    };
+    const result = await response.json();
+    console.log("Respuesta del servidor: ", result);
 
-    pdfFiles.value.push(newFile);
-    pdfFile.value = null;
-
-    // Mostrar notificacion
     $q.notify({
       type: "positive",
       message: "Archivo subido correctamente",
     });
-    console.log("Respuesta del servidor: ", response);
+
+    // Aquí puedes llamar a tu método personalizado para registrar el archivo en el doctype "Archivos PDF"
+    const uploadResponse = await fetch(
+      `${apiUrlStore.apiUrl}/api/method/${apiUrlStore.appName}.api.pdf.upload_pdf`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `token ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          file: result.message.file_url,
+          file_name: file.name,
+          is_private: 0,
+        }),
+      }
+    );
+
+    if (!uploadResponse.ok) {
+      throw new Error("Error al registrar el archivo en el doctype");
+    }
+
+    const uploadResult = await uploadResponse.json();
+    console.log("Archivo registrado en el doctype: ", uploadResult);
+
+    // Actualizar la lista de archivos PDF
+    await fetchPdfFiles();
   } catch (error) {
-    // Notificacion de error
     $q.notify({
       type: "negative",
       message: "Error, no se pudo subir el archivo",
@@ -296,15 +308,41 @@ async function handleFileUpload(file: File | null): Promise<void> {
   }
 }
 
-function previewPdf(file: PdfFile): void {
-  selectedFile.value = file;
-  previewDialog.value = true;
-}
+// Funcion para obtener los archivos del doctype
+async function fetchPdfFiles() {
+  try {
+    const token = getAuthToken();
 
-function deletePdf(file: PdfFile): void {
-  const index = pdfFiles.value.indexOf(file);
-  if (index > -1) {
-    pdfFiles.value.splice(index, 1);
+    // Llamar al método de Frappe para obtener los archivos PDF
+    const response = await fetch(
+      `${apiUrlStore.apiUrl}/api/method/${apiUrlStore.appName}.api.pdf.get_pdf_files`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `token ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.log("Error al obtener los archivos del doctype");
+      throw new Error("Error al obtener los archivos PDF");
+    }
+
+    const result = await response.json();
+    pdfFiles.value = result.message; // Asignar los archivos a la lista
+  } catch (error) {
+    $q.notify({
+      type: "negative",
+      message: "Error al obtener los archivos PDF",
+    });
+    console.error("Error al obtener los archivos PDF:", error);
   }
 }
+
+// Llamar a la función al cargar el componente
+onMounted(() => {
+  fetchPdfFiles();
+});
 </script>
