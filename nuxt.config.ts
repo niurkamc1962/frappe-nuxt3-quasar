@@ -7,11 +7,11 @@ export default defineNuxtConfig({
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss',
-    '@nuxt/icon',
     '@nuxtjs/color-mode',
     '@nuxt/image',
     'nuxt-quasar-ui',
-    'pinia-plugin-persistedstate/nuxt'
+    'pinia-plugin-persistedstate/nuxt',
+    '@i2d/nuxt-pdf-frame'
   ],
   quasar: {
     plugins: [

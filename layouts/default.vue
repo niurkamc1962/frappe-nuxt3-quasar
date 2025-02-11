@@ -52,10 +52,10 @@
                   { 'link-active': isActive(item.path) },
                 ]"
               >
-                <Icon
+                <q-icon
                   v-if="item.icon"
                   :name="item.icon"
-                  size="20"
+                  size="30px"
                   :class="{
                     'text-gray-800 dark:text-yellow-200': !isActive(item.path),
                     'text-yellow-200': isActive(item.path),
@@ -109,6 +109,7 @@ const changeColor = () => {
   }
 };
 
+// Funcion que verifica si esta activa la ruta
 const isActive = (path: string) => {
   return route.path === path;
 };
@@ -129,17 +130,17 @@ interface UserMenuItem {
 const navigationLinks: NavigationLink[] = [
   {
     title: "Sql Server - Maria DB",
-    icon: "i-heroicons-arrow-up-tray",
+    icon: "import_export",
     path: "/siscont-erp",
   },
   {
     title: "Gestion archivos PDF",
-    icon: "i-heroicons-document",
+    icon: "picture_as_pdf",
     path: "/procesa-pdf",
   },
   {
-    title: "Clientes-Proveedores PDF",
-    icon: "i-heroicons-envelope",
+    title: "Enviar PDF",
+    icon: "mail",
     path: "/adjunto-pdf",
   },
 ];
@@ -148,12 +149,12 @@ const userMenuItems: UserMenuItem[][] = [
   [
     {
       title: "Administración",
-      icon: "i-heroicons-cog-8-tooth",
+      icon: "settings",
       path: "/admin",
     },
     {
       title: "Cerrar Sesión",
-      icon: "i-heroicons-arrow-left-on-rectangle",
+      icon: "logout",
       path: "/",
     },
   ],

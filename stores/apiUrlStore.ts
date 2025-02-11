@@ -1,24 +1,27 @@
 import { defineStore } from 'pinia';
 
 interface ApiUrlState {
-  apiUrl: string
-  appName: string
+  frappeApiUrl: string;
+  fastApiUrl: string;
+  appName: string;
 }
 
 export const useApiUrlStore = defineStore('apiUrl', {
-  state: () => ({
-    apiUrl: '', // Estado inicial de la URL de la API
-    appName: '', // estado inicial del nombre de la aplicacion
+  state: (): ApiUrlState => ({
+    frappeApiUrl: process.env.NUXT_PUBLIC_FRAPPE_API_URL || '',
+    fastApiUrl: process.env.NUXT_PUBLIC_FASTAPI_URL || '',
+    appName: '',
   }),
   actions: {
-    // Acción para actualizar la URL de la API
-    setApiUrl(newUrl: string) {
-      this.apiUrl = newUrl;
+    setFrappeApiUrl(newUrl: string) {
+      this.frappeApiUrl = newUrl;
     },
-    // Accion para actualizar el nombre de la aplicacion
+    setFastApiUrl(newUrl: string) {
+      this.fastApiUrl = newUrl;
+    },
     setAppName(newAppName: string) {
-      this.appName = newAppName
+      this.appName = newAppName;
     }
   },
-  persist: true, // Habilita la persistencia
+  persist: true,
 });
